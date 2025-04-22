@@ -75,31 +75,49 @@ export class CustomRenderSettingTab extends PluginSettingTab {
         // 添加每一条规则
         this.plugin.settings.replaceRules.forEach((rule: IRule, index: number) => {
             new Setting(containerEl)
-                .addText(text => text
-                    .setPlaceholder(this.labels.reg.placeholder[language])
-                    .setValue(rule.pattern)
-                    .onChange(value => {
+                .addText(text => {
+                    let err = false;
+                    text
+                        .setPlaceholder(this.labels.reg.placeholder[language])
+                        .setValue(rule.pattern)
+                        .onChange(value => {
 
-                        let patterns = value.split("text");
-                        if (!value.includes("text") || patterns[0] === "") {
-                            text.inputEl.classList.add("setting-err");
-                            return; // 不保存无效的值
-                        }
+                            const patterns = value.split("text");
+                            if (!value.includes("text") || patterns[0] === "") {
+                                text.inputEl.classList.add("setting-err");
+                                err = true;
+                                return; // 不保存无效的值
+                            }
 
-                        text.inputEl.classList.remove("setting-err");
+                            // 新增：检查前缀冲突
+                            const hasPrefixConflict = this.plugin.settings.replaceRules.some(rule => {
+                                const rulePatterns = rule.pattern.split("text");
 
-                        this.plugin.settings.replaceRules[index].pattern = value;
-                        this.plugin.saveSettings();
-                    })
-                    .inputEl.addEventListener("blur", () => {
-                        let value = text.getValue();
-                        let patterns = value.split("text");
-                        if (!value.includes("text") || patterns[0] === "") {
-                            // 恢复为原始值
-                            text.setValue(this.plugin.settings.replaceRules[index].pattern);
+                                // 当前规则无后缀 && 其他规则有相同前缀 && 其他规则有后缀
+                                return !patterns[1] &&
+                                    (rulePatterns[0].includes(patterns[0]) || patterns[0].includes(rulePatterns[0])) &&
+                                    rulePatterns[1];
+                            });
+
+                            if (hasPrefixConflict) {
+                                text.inputEl.classList.add("setting-err");
+                                err = true;
+                                return;
+                            }
+
                             text.inputEl.classList.remove("setting-err");
-                        }
-                    }))
+
+                            this.plugin.settings.replaceRules[index].pattern = value;
+                            this.plugin.saveSettings();
+                        })
+                        .inputEl.addEventListener("blur", () => {
+                            if (err) {
+                                // 恢复为原始值
+                                text.setValue(this.plugin.settings.replaceRules[index].pattern);
+                                text.inputEl.classList.remove("setting-err");
+                            }
+                        })
+                })
                 .addText(text => text
                     .setPlaceholder("css")
                     .setValue(rule.css)
@@ -107,6 +125,15 @@ export class CustomRenderSettingTab extends PluginSettingTab {
                         this.plugin.settings.replaceRules[index].css = value;
                         this.plugin.saveSettings();
                     }))
+                .addToggle(btn => {
+                    btn.setValue(rule.copyLine)
+                        // .setDisabled(true)
+                        .setTooltip(this.labels.delete.desc[language])
+                        .onChange(value => {
+                            this.plugin.settings.replaceRules[index].copyLine = value;
+                            this.plugin.saveSettings();
+                        });
+                })
                 .addExtraButton(btn => {
                     btn.setIcon("cross")
                         .setTooltip(this.labels.delete.desc[language])
@@ -124,7 +151,7 @@ export class CustomRenderSettingTab extends PluginSettingTab {
                 btn.setButtonText(this.labels.add.name[language])
                     .setCta()
                     .onClick(() => {
-                        this.plugin.settings.replaceRules.push({ pattern: "", css: "" });
+                        this.plugin.settings.replaceRules.push({ pattern: "", css: "", copyLine: false });
                         // this.plugin.saveSettings();
                         this.display();
                     });
