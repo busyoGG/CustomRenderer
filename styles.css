@@ -1,0 +1,15 @@
+.hide {
+    display: none;
+}
+
+.setting-err {
+    border-color: red !important;
+}
+
+.single-mark {
+    color: grey !important;
+}
+
+.color-yellow {
+    color: yellow
+}

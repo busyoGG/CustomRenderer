@@ -1,0 +1,10 @@
+{
+	"id": "custom-renderer",
+	"name": "Custom Renderer",
+	"version": "1.0.0",
+	"minAppVersion": "1.8.0",
+	"description": "客制化 Markdown 渲染规则",
+	"author": "Busyo",
+	"authorUrl": "https://github.com/busyoGG",
+	"isDesktopOnly": false
+}
