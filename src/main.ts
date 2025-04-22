@@ -44,6 +44,8 @@ export default class CustomRendererPlugin extends Plugin {
 
 		// 记录上一次在标记内的光标
 		let lastCursorInside: RegExpExecArray | null = null;
+		let isInside = false;
+
 		let isMouseUp = false;
 
 		this.registerDomEvent(document.body, "mouseup", () => {
@@ -69,6 +71,8 @@ export default class CustomRendererPlugin extends Plugin {
 					const builder = new RangeSetBuilder<Decoration>();
 					const selection = view.state.selection.main;
 					const cursor = selection.head;
+
+					let isInsideTemp = false;
 
 					for (let { from, to } of view.visibleRanges) {
 						const text = view.state.doc.sliceString(from, to);
@@ -112,7 +116,8 @@ export default class CustomRendererPlugin extends Plugin {
 										}));
 									}
 
-									if (match.index != lastCursorInside?.index) {
+									// console.log(match.index, lastCursorInside?.index, isInside, isInsideTemp)
+									if (!isInside || match.index != lastCursorInside?.index) {
 										//移动光标到首尾
 										if (isCursorLeft) {
 											requestAnimationFrame(() => {
@@ -132,6 +137,8 @@ export default class CustomRendererPlugin extends Plugin {
 
 										lastCursorInside = match;
 									}
+
+									isInsideTemp = true;
 
 								} else {
 									builder.add(matchFrom, contentFrom, Decoration.replace({
@@ -153,6 +160,8 @@ export default class CustomRendererPlugin extends Plugin {
 							}
 						}
 					}
+
+					isInside = isInsideTemp;
 
 					return builder.finish();
 				}
